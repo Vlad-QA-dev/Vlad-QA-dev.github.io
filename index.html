@@ -6,12 +6,14 @@
   <title>Привет, я - Влад.QA ingeneer</title>
   <meta name="description" content="Vlad Petukhov QA">
   <style>
-    body {
-      margin: 0; padding: 0;
-      background: #000; color: #0F0;
-      font-family: 'Courier New', monospace;
-      overflow: hidden;
-    }
+  body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #0F0;
+  font-family: 'Courier New', monospace;
+  overflow: auto;    /* <- уберите или замените */
+}
     a { color: #0F0; text-decoration: none; }
     a:hover { text-decoration: underline; }
 
@@ -102,6 +104,7 @@
 
 /* Держим поп-ап открытым и при наведении на «Контакты», и при наведении на само окно */
 .contacts:hover .popup,
+.contacts.active .popup,
 .contacts .popup:hover {
   display: block;
 }
@@ -111,7 +114,7 @@
       padding: 1rem 0;
       font-size: .9rem;
       opacity: .6;
-      position: absolute; bottom: 0; left: 0; right: 0;
+      position: relative; bottom: 0; left: 0; right: 0;
     }
   </style>
 </head>
@@ -121,14 +124,26 @@
   <header>QA Engineer</header>
 
   <div class="container">
-    <h1>Обо мне</h1>
+    <h1></h1>
     <div class="photo">
     <img src="VladQA.jpg" alt="Фото Влад">
   </div>
     <div class="about">
-     <p><strong>Привет, я Влад — QA-инженер с 3,5-летним опытом в Citilink. Специализируюсь на тестировании backend, веб и мобильных приложений, ловлю критичные баги ещё до релиза и помогаю  выпускать стабильный и надёжный продукт.</strong></p>
-      <p><strong>Готов обсудить, как повысить качество вашего продукта — <a href="mailto:robertlokam@yandex.ru">напиcать мне</strong></a>.</p>
-    </div>
+  <p>
+    <strong>
+      
+      Привет, я Влад — QA-инженер с 3,5-летним опытом в кросс-функциональной продуктовой команде Citilink. Специализируюсь на backend и мобильных приложениях: от глубокого API-тестирования и валидации бизнес-логики до проверки UI в браузере и на реальных устройствах. Я вижу в автоматизации следующий шаг в развитии и давно интересуюсь изучением кода, поэтому постоянно самообучаюсь и повышаю квалификацию — ведь в IT учиться нужно всю жизнь.
+    </strong>
+  </p>
+  <p>
+    <strong>
+      Ниже мои контакты, резюме и GitHub — буду рад обсудить, как вместе вывести ваш проект на новый уровень! —
+      <a href="https://t.me/robertlokamp" target="_blank" rel="noopener">
+        @robertlokamp
+      </a>
+    </strong>
+  </p>
+</div>
 
  <div class="full-stack">
   STACK: HTML/CSS / DevTools (Elements, Console, Network) /
@@ -179,6 +194,25 @@
       w = c.width = window.innerWidth;
       h = c.height = window.innerHeight;
     });
+  </script>
+  <script>
+    (function(){
+      const contacts = document.querySelector('.contacts');
+      let hideTimer;
+
+      // При наведении — показываем сразу и сбрасываем таймер
+      contacts.addEventListener('mouseenter', () => {
+        contacts.classList.add('active');
+        clearTimeout(hideTimer);
+      });
+
+      // При уходе курсора — запускаем таймер на 5 000 мс
+      contacts.addEventListener('mouseleave', () => {
+        hideTimer = setTimeout(() => {
+          contacts.classList.remove('active');
+        }, 5000);
+      });
+    })();
   </script>
 </body>
 </html>
