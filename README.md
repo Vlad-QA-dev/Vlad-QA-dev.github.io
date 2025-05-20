@@ -1,8 +1,6 @@
-<!-- Фон с анимированной чёрной дырой -->
 <p align="center">
-  <img src="https://media.giphy.com/media/dZX3YXXrXAO9O/giphy.gif" width="100%" alt="Rotating Black Hole Background"/>
+  <img src="https://media.giphy.com/media/i0K0OSu8OY0jdWsOoN/giphy.gif" width="100%" alt="Black Hole Animation"/>
 </p>
-
 <!-- Блок с фото и представлением -->
 <table>
   <tr>
