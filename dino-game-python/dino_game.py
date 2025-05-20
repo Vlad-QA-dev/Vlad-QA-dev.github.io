@@ -25,7 +25,7 @@ GROUND_Y = HEIGHT - 80
 dino_rect = pygame.Rect(50, GROUND_Y, 64, 64)
 dino_vel_y = 0
 gravity = 1
-jump_power = -16
+jump_power = -20
 is_jumping = False
 frame_index = 0
 
@@ -43,13 +43,27 @@ def draw_window():
     WIN.blit(BG_IMG, (0, 0))
     WIN.blit(DINO_FRAMES[frame_index // 10 % 2], dino_rect.topleft)
     for obs in obstacles:
-        WIN.blit(CACTUS_IMG, obs.topleft)
+        scaled_cactus = pygame.transform.scale(CACTUS_IMG, (obs.width, obs.height))
+        WIN.blit(scaled_cactus, obs.topleft)
     score_text = font.render(f"Score: {score}", True, (0, 0, 0))
     WIN.blit(score_text, (10, 10))
     pygame.display.update()
 
 def main():
     global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed, game_over
+
+    # Reset game state variables
+    dino_rect.y = GROUND_Y
+    dino_vel_y = 0
+    is_jumping = False
+    frame_index = 0
+    obstacles.clear()
+    obstacle_timer = 0
+    obstacle_interval = 1500
+    obstacle_speed = 8
+    score = 0
+    game_over = False
+
     # Стартовый экран
     WIN.blit(BG_IMG, (0, 0))
     title_text = font.render("DINO RUN", True, (0, 0, 0))
@@ -77,20 +91,11 @@ def main():
         elapsed = now - start_time
 
         if game_over:
-            draw_window()
-            over_text = font.render("Game Over! Press R to restart", True, (0, 0, 0))
-            WIN.blit(over_text, (WIDTH // 2 - 150, HEIGHT // 2))
-            pygame.display.update()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-                    return main()
-            continue
+            pygame.time.delay(2000)
+            return main()
 
-        if elapsed % 5000 < 20 and obstacle_interval > 700:
-            obstacle_interval -= 50
+        if elapsed % 8000 < 20 and obstacle_speed < 14:
+            obstacle_interval = max(700, obstacle_interval - 50)
             obstacle_speed += 1
 
         for event in pygame.event.get():
@@ -110,13 +115,16 @@ def main():
             is_jumping = False
 
         # ⏳ Не спавним препятствия первые 2 секунды
-        if elapsed < 2000:
-            draw_window()
-            continue
-        if now - obstacle_timer > obstacle_interval:
+        if elapsed > 2000 and now - obstacle_timer > obstacle_interval:
             obstacle_timer = now
+            # Добавляем один или два кактуса
             new_cactus = pygame.Rect(WIDTH, GROUND_Y + 10, 34, 54)
             obstacles.append(new_cactus)
+
+            # Если прошло больше 20 сек — шанс на двойной кактус
+            if elapsed > 20000 and random.random() < 0.4:
+                extra_cactus = pygame.Rect(WIDTH + 40, GROUND_Y + 10, 34, 54)
+                obstacles.append(extra_cactus)
 
         for obs in obstacles[:]:
             obs.x -= obstacle_speed
