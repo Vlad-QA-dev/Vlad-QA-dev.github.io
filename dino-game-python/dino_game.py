@@ -14,11 +14,17 @@ clock = pygame.time.Clock()
 
 ASSETS = os.path.join(os.path.dirname(__file__), "assets")
 DINO_FRAMES = [
-    pygame.transform.scale(pygame.image.load(os.path.join(ASSETS, "dino1.png")), (64, 64)),
-    pygame.transform.scale(pygame.image.load(os.path.join(ASSETS, "dino2.png")), (64, 64)),
+    pygame.transform.scale(
+        pygame.image.load(os.path.join(ASSETS, "dino1.png")), (64, 64)
+    ),
+    pygame.transform.scale(
+        pygame.image.load(os.path.join(ASSETS, "dino2.png")), (64, 64)
+    ),
 ]
 CACTUS_IMG = pygame.image.load(os.path.join(ASSETS, "cactus.png"))
-BG_IMG = pygame.transform.scale(pygame.image.load(os.path.join(ASSETS, "background.png")), (WIDTH, HEIGHT))
+BG_IMG = pygame.transform.scale(
+    pygame.image.load(os.path.join(ASSETS, "background.png")), (WIDTH, HEIGHT)
+)
 
 dino_rect = None
 GROUND_Y = HEIGHT - 80
@@ -39,6 +45,7 @@ game_over = False
 score = 0
 font = pygame.font.SysFont("monospace", 24)
 
+
 def draw_window():
     WIN.blit(BG_IMG, (0, 0))
     WIN.blit(DINO_FRAMES[frame_index // 10 % 2], dino_rect.topleft)
@@ -48,6 +55,7 @@ def draw_window():
     score_text = font.render(f"Score: {score}", True, (0, 0, 0))
     WIN.blit(score_text, (10, 10))
     pygame.display.update()
+
 
 def main():
     global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed, game_over
@@ -71,7 +79,7 @@ def main():
     WIN.blit(title_text, (WIDTH // 2 - 60, HEIGHT // 2 - 40))
     WIN.blit(start_text, (WIDTH // 2 - 110, HEIGHT // 2))
     pygame.display.update()
-    
+
     waiting = True
     while waiting:
         for event in pygame.event.get():
@@ -136,6 +144,7 @@ def main():
                 game_over = True
 
         draw_window()
+
 
 if __name__ == "__main__":
     main()
