@@ -4,7 +4,7 @@ import sys
 import os
 
 pygame.init()
-WIDTH, HEIGHT = 800, 300
+WIDTH, HEIGHT = 800, 400
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Dino Run")
 
@@ -18,9 +18,11 @@ DINO_FRAMES = [
     pygame.transform.scale(pygame.image.load(os.path.join(ASSETS, "dino2.png")), (64, 64)),
 ]
 CACTUS_IMG = pygame.image.load(os.path.join(ASSETS, "cactus.png"))
-BG_IMG = pygame.image.load(os.path.join(ASSETS, "background.png"))
+BG_IMG = pygame.transform.scale(pygame.image.load(os.path.join(ASSETS, "background.png")), (WIDTH, HEIGHT))
 
-dino_rect = pygame.Rect(50, HEIGHT - 100, 64, 64)
+dino_rect = None
+GROUND_Y = HEIGHT - 80
+dino_rect = pygame.Rect(50, GROUND_Y, 64, 64)
 dino_vel_y = 0
 gravity = 1
 jump_power = -16
@@ -31,6 +33,8 @@ obstacles = []
 obstacle_timer = 0
 obstacle_interval = 1500
 obstacle_speed = 8
+
+game_over = False
 
 score = 0
 font = pygame.font.SysFont("monospace", 24)
@@ -45,7 +49,24 @@ def draw_window():
     pygame.display.update()
 
 def main():
-    global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed
+    global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed, game_over
+    # Стартовый экран
+    WIN.blit(BG_IMG, (0, 0))
+    title_text = font.render("DINO RUN", True, (0, 0, 0))
+    start_text = font.render("Press SPACE to start", True, (0, 0, 0))
+    WIN.blit(title_text, (WIDTH // 2 - 60, HEIGHT // 2 - 40))
+    WIN.blit(start_text, (WIDTH // 2 - 110, HEIGHT // 2))
+    pygame.display.update()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                waiting = False
+
     running = True
     start_time = pygame.time.get_ticks()
 
@@ -54,6 +75,19 @@ def main():
         frame_index += 1
         now = pygame.time.get_ticks()
         elapsed = now - start_time
+
+        if game_over:
+            draw_window()
+            over_text = font.render("Game Over! Press R to restart", True, (0, 0, 0))
+            WIN.blit(over_text, (WIDTH // 2 - 150, HEIGHT // 2))
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                    return main()
+            continue
 
         if elapsed % 5000 < 20 and obstacle_interval > 700:
             obstacle_interval -= 50
@@ -70,14 +104,18 @@ def main():
 
         dino_rect.y += dino_vel_y
         dino_vel_y += gravity
-        if dino_rect.y >= HEIGHT - 90:
-            dino_rect.y = HEIGHT - 90
+        if dino_rect.y >= GROUND_Y:
+            dino_rect.y = GROUND_Y
             dino_vel_y = 0
             is_jumping = False
 
+        # ⏳ Не спавним препятствия первые 2 секунды
+        if elapsed < 2000:
+            draw_window()
+            continue
         if now - obstacle_timer > obstacle_interval:
             obstacle_timer = now
-            new_cactus = pygame.Rect(WIDTH, HEIGHT - 70, 34, 70)
+            new_cactus = pygame.Rect(WIDTH, GROUND_Y + 10, 34, 54)
             obstacles.append(new_cactus)
 
         for obs in obstacles[:]:
@@ -87,9 +125,7 @@ def main():
                 score += 1
 
             if dino_rect.colliderect(obs):
-                pygame.quit()
-                print(f"Game Over! Your score: {score}")
-                sys.exit()
+                game_over = True
 
         draw_window()
 
