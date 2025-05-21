@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 import os
+import json
 
 pygame.init()
 WIDTH, HEIGHT = 800, 400
@@ -25,8 +26,10 @@ CACTUS_IMG = pygame.image.load(os.path.join(ASSETS, "cactus.png"))
 BG_IMG = pygame.transform.scale(
     pygame.image.load(os.path.join(ASSETS, "background.png")), (WIDTH, HEIGHT)
 )
+BIRD_IMG = pygame.transform.scale(
+    pygame.image.load(os.path.join(ASSETS, "bird.png")), (64, 44)
+)
 
-dino_rect = None
 GROUND_Y = HEIGHT - 80
 dino_rect = pygame.Rect(50, GROUND_Y, 64, 64)
 dino_vel_y = 0
@@ -45,13 +48,29 @@ game_over = False
 score = 0
 font = pygame.font.SysFont("monospace", 24)
 
+# Leaderboard support
+LEADERBOARD_FILE = os.path.join(ASSETS, "leaderboard.json")
+
+# Load or initialize leaderboard
+try:
+    with open(LEADERBOARD_FILE, "r") as f:
+        leaderboard = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    leaderboard = []
+
+# Prompt player for name before game starts
+player_name = input("Введите ваше имя: ")
+
 
 def draw_window():
     WIN.blit(BG_IMG, (0, 0))
     WIN.blit(DINO_FRAMES[frame_index // 10 % 2], dino_rect.topleft)
-    for obs in obstacles:
-        scaled_cactus = pygame.transform.scale(CACTUS_IMG, (obs.width, obs.height))
-        WIN.blit(scaled_cactus, obs.topleft)
+    for obs, kind in obstacles:
+        if kind == "bird":
+            WIN.blit(BIRD_IMG, obs.topleft)
+        else:
+            scaled_cactus = pygame.transform.scale(CACTUS_IMG, (obs.width, obs.height))
+            WIN.blit(scaled_cactus, obs.topleft)
     score_text = font.render(f"Score: {score}", True, (0, 0, 0))
     WIN.blit(score_text, (10, 10))
     pygame.display.update()
@@ -78,6 +97,10 @@ def main():
     start_text = font.render("Press SPACE to start", True, (0, 0, 0))
     WIN.blit(title_text, (WIDTH // 2 - 60, HEIGHT // 2 - 40))
     WIN.blit(start_text, (WIDTH // 2 - 110, HEIGHT // 2))
+    # Display top 5 leaderboard
+    for idx, entry in enumerate(leaderboard):
+        lb_text = font.render(f"{idx+1}. {entry['name']} - {entry['score']}", True, (0,0,0))
+        WIN.blit(lb_text, (WIDTH//2 - 100, HEIGHT// 2 + 40 + idx*30))
     pygame.display.update()
 
     waiting = True
@@ -100,6 +123,11 @@ def main():
 
         if game_over:
             pygame.time.delay(2000)
+            # Update leaderboard
+            leaderboard.append({"name": player_name, "score": score})
+            leaderboard[:] = sorted(leaderboard, key=lambda x: x["score"], reverse=True)[:5]
+            with open(LEADERBOARD_FILE, "w") as f:
+                json.dump(leaderboard, f)
             return main()
 
         if elapsed % 8000 < 20 and obstacle_speed < 14:
@@ -125,21 +153,19 @@ def main():
         # ⏳ Не спавним препятствия первые 2 секунды
         if elapsed > 2000 and now - obstacle_timer > obstacle_interval:
             obstacle_timer = now
-            # Добавляем один или два кактуса
-            new_cactus = pygame.Rect(WIDTH, GROUND_Y + 10, 34, 54)
-            obstacles.append(new_cactus)
+            kind = "cactus" if random.random() < 0.7 else "bird"
+            if kind == "cactus":
+                new_obs = pygame.Rect(WIDTH, GROUND_Y + 10, 34, 54)
+            else:
+                new_obs = pygame.Rect(WIDTH, GROUND_Y - 100, 64, 44)
+            obstacles.append((new_obs, kind))
 
-            # Если прошло больше 20 сек — шанс на двойной кактус
-            if elapsed > 20000 and random.random() < 0.4:
-                extra_cactus = pygame.Rect(WIDTH + 40, GROUND_Y + 10, 34, 54)
-                obstacles.append(extra_cactus)
-
-        for obs in obstacles[:]:
+        for entry in obstacles[:]:
+            obs, kind = entry
             obs.x -= obstacle_speed
             if obs.right < 0:
-                obstacles.remove(obs)
+                obstacles.remove(entry)
                 score += 1
-
             if dino_rect.colliderect(obs):
                 game_over = True
 
