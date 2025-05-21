@@ -41,12 +41,16 @@ BIRD_IMG = pygame.transform.scale(
 PUDDLE_IMG = pygame.transform.scale(
     pygame.image.load(os.path.join(ASSETS, "puddle.png")), (50, 30)
 )
+# Meteor obstacle
+METEOR_IMG = pygame.transform.scale(
+    pygame.image.load(os.path.join(ASSETS, "meteor.png")), (30, 30)
+)
 
 GROUND_Y = HEIGHT - 80
 dino_rect = pygame.Rect(50, GROUND_Y, 64, 64)
 dino_vel_y = 0
 gravity = 1
-jump_power = -20
+jump_power = -15  # reduced jump strength
 is_jumping = False
 frame_index = 0
 
@@ -79,6 +83,8 @@ SLIDE_DURATION = 500  # milliseconds
 DAY_LENGTH = 30000  # milliseconds per phase
 is_night = False
 last_cycle_switch = 0
+
+meteor_chance = 0.01  # 1% chance to spawn per cycle
 
 def get_player_name():
     name = ""
@@ -129,6 +135,8 @@ def draw_window():
             WIN.blit(BIRD_IMG, obs.topleft)
         elif kind == "puddle":
             WIN.blit(PUDDLE_IMG, obs.topleft)
+        elif kind == "meteor":
+            WIN.blit(METEOR_IMG, obs.topleft)
         else:
             WIN.blit(CACTUS_SCALED, obs.topleft)
     score_text = font.render(f"Score: {score}", True, (0, 0, 0))
@@ -137,7 +145,7 @@ def draw_window():
 
 
 def main():
-    global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed, game_over, jump_power, next_difficulty_score, sliding, slide_timer, jump_count, is_night, last_cycle_switch
+    global dino_vel_y, is_jumping, obstacle_timer, score, obstacle_interval, frame_index, obstacle_speed, game_over, jump_power, next_difficulty_score, sliding, slide_timer, jump_count, is_night, last_cycle_switch, meteor_chance
 
     # Prompt player for name via game interface
     player_name = get_player_name()
@@ -151,11 +159,11 @@ def main():
     obstacles.clear()
     obstacle_timer = 0
     obstacle_interval = 2000
-    obstacle_speed = 8
+    obstacle_speed = 10
     score = 0
     next_difficulty_score = 50
     game_over = False
-    jump_power = -20
+    jump_power = -15
     sliding = False
     slide_timer = 0
     wave_index = 0
@@ -259,7 +267,7 @@ def main():
             is_night = not is_night
             last_cycle_switch = now
 
-        if elapsed > 2000 and now - obstacle_timer > obstacle_interval:
+        if now - obstacle_timer > obstacle_interval:
             # ensure minimum horizontal gap between obstacle waves
             if not obstacles or obstacles[-1][0].x < WIDTH - 200:
                 obstacle_timer = now
@@ -286,14 +294,19 @@ def main():
 
         for entry in obstacles[:]:
             obs, kind = entry
-            obs.x -= obstacle_speed
-            if obs.right < 0:
+            if kind == "meteor":
+                # move diagonally down-left at half speed
+                obs.x -= obstacle_speed // 2
+                obs.y += obstacle_speed // 4
+            else:
+                obs.x -= obstacle_speed
+            # remove when off-screen
+            if obs.right < 0 or obs.top > HEIGHT:
                 obstacles.remove(entry)
-                score += 1
-                if score >= next_difficulty_score:
-                    obstacle_speed += 1
-                    obstacle_interval = max(300, obstacle_interval - 50)
-                    next_difficulty_score += 50
+                if kind not in ("meteor", "puddle", "bonus"):
+                    score += 1
+                if kind == "meteor":
+                    continue
             elif dino_rect.colliderect(obs):
                 if kind == "puddle":
                     obstacle_speed += 4  # make obstacles approach faster after puddle
@@ -302,6 +315,13 @@ def main():
                     slide_timer = pygame.time.get_ticks()  # reset slide timer to avoid overlap
                 else:
                     game_over = True
+
+        # Independent meteor spawn each frame
+        if random.random() < meteor_chance:
+            # spawn meteor from right edge
+            spawn_y = random.randint(0, HEIGHT // 4)
+            meteor_rect = pygame.Rect(WIDTH, spawn_y, 30, 30)
+            obstacles.append((meteor_rect, "meteor"))
 
         # Removed background scroll logic for static background
 
